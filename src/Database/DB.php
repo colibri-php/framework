@@ -17,6 +17,20 @@ class DB
     private static ?Medoo $medoo = null;
 
     /**
+     * Check if a database connection is configured and available.
+     */
+    public static function isAvailable(): bool
+    {
+        try {
+            self::init();
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
      * Initialize the database connection from config.
      */
     public static function init(): void

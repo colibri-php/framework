@@ -112,6 +112,12 @@ class App
             return Response::json(['error' => $e->getMessage()], $e->statusCode);
         }
 
+        $debug = Config::get('app.debug', false);
+
+        if ($debug && $e->statusCode === 404) {
+            return Response::html(self::renderDebug404($request), 404);
+        }
+
         return Response::html(self::renderErrorPage($e->statusCode, $e->getMessage()), $e->statusCode);
     }
 
@@ -182,6 +188,101 @@ class App
             $html .= '<p>' . htmlspecialchars($message) . '</p>';
         }
         $html .= '<a href="/">← Back to home</a></body></html>';
+
+        return $html;
+    }
+
+    /**
+     * Render a debug-friendly 404 page showing the requested path and available routes.
+     */
+    private static function renderDebug404(Request $request): string
+    {
+        $path = htmlspecialchars($request->path);
+        $method = htmlspecialchars($request->method);
+
+        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8">';
+        $html .= '<title>404 — Not Found</title>';
+        $html .= '<style>';
+        $html .= 'body{font-family:-apple-system,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#333}';
+        $html .= 'h1{color:#c0392b}h2{color:#666;margin-top:2rem}';
+        $html .= '.path{background:#fff3cd;padding:.5rem 1rem;border-radius:4px;font-family:monospace;font-size:1.1rem}';
+        $html .= 'table{width:100%;border-collapse:collapse;margin-top:1rem}';
+        $html .= 'td,th{text-align:left;padding:.4rem .8rem;border-bottom:1px solid #eee}';
+        $html .= 'th{color:#888;font-size:.85rem;text-transform:uppercase}';
+        $html .= '.type{color:#888;font-size:.85rem}';
+        $html .= '</style>';
+        $html .= '</head><body>';
+        $html .= '<h1>404 — Not Found</h1>';
+        $html .= "<p class=\"path\">$method $path</p>";
+
+        // Scan routes
+        $html .= '<h2>Available routes</h2>';
+        $html .= '<table><tr><th>URL</th><th>Type</th><th>File</th></tr>';
+
+        $basePath = base_path();
+        $html .= self::scanRoutesForDebug(base_path('routes/web'), base_path('routes/web'), '', $basePath);
+        $html .= self::scanRoutesForDebug(base_path('routes/api'), base_path('routes/api'), '/api', $basePath);
+
+        $html .= '</table>';
+        $html .= '<p style="margin-top:2rem;color:#aaa;font-size:.85rem">This page is only visible in debug mode.</p>';
+        $html .= '</body></html>';
+
+        return $html;
+    }
+
+    /**
+     * Scan a routes directory and return HTML table rows.
+     */
+    private static function scanRoutesForDebug(string $dir, string $baseDir, string $prefix, string $projectPath): string
+    {
+        if (! is_dir($dir)) {
+            return '';
+        }
+
+        $html = '';
+        $entries = scandir($dir) ?: [];
+        sort($entries);
+
+        foreach ($entries as $entry) {
+            if ($entry[0] === '.' || $entry[0] === '_') {
+                continue;
+            }
+
+            $fullPath = $dir . DIRECTORY_SEPARATOR . $entry;
+
+            if (is_dir($fullPath)) {
+                $html .= self::scanRoutesForDebug($fullPath, $baseDir, $prefix, $projectPath);
+
+                continue;
+            }
+
+            if (! Str::endsWith($entry, '.php') && ! Str::endsWith($entry, '.latte')) {
+                continue;
+            }
+
+            $relative = str_replace($baseDir, '', $dir . DIRECTORY_SEPARATOR . $entry);
+            $relative = str_replace('\\', '/', $relative);
+
+            $file = pathinfo($entry, PATHINFO_FILENAME);
+            $ext = pathinfo($entry, PATHINFO_EXTENSION);
+
+            $dirPart = str_replace('\\', '/', dirname($relative));
+            $url = $prefix . $dirPart;
+            if ($file === 'index') {
+                $url = rtrim($url, '/') ?: '/';
+            } else {
+                $url = rtrim($url, '/') . '/' . $file;
+            }
+
+            $filePath = str_replace($projectPath, '', $fullPath);
+            $filePath = str_replace('\\', '/', $filePath);
+
+            $html .= '<tr>';
+            $html .= '<td>' . htmlspecialchars($url) . '</td>';
+            $html .= '<td class="type">' . $ext . '</td>';
+            $html .= '<td class="type">' . htmlspecialchars($filePath) . '</td>';
+            $html .= '</tr>';
+        }
 
         return $html;
     }

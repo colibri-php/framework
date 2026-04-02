@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Colibri\Database\Commands;
 
 use Colibri\CLI\Interfaces\CommandInterface;
+use Colibri\Database\DB;
 use Colibri\Database\Migration;
 
 class MigrateDownCommand implements CommandInterface
@@ -21,6 +22,12 @@ class MigrateDownCommand implements CommandInterface
 
     public function handle(array $args): int
     {
+        if (! DB::isAvailable()) {
+            echo "  ✗ No database configured. Migrations require a database connection.\n";
+
+            return 1;
+        }
+
         $rolledBack = Migration::down();
 
         if ($rolledBack === []) {
