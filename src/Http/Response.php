@@ -183,6 +183,14 @@ class Response
     }
 
     /**
+     * Check if this is a redirect response.
+     */
+    public function isRedirect(): bool
+    {
+        return $this->statusCode >= 300 && $this->statusCode < 400;
+    }
+
+    /**
      * Get the body.
      */
     public function getBody(): string

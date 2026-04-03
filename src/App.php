@@ -9,6 +9,7 @@ use Colibri\Support\Str;
 use Colibri\Http\Request;
 use Colibri\Http\Response;
 use Colibri\Http\Router;
+use Colibri\Support\Flash;
 use Colibri\Support\Log;
 
 class App
@@ -99,6 +100,11 @@ class App
         }
 
         $response->send();
+
+        // Clear old input after rendering a non-redirect response (flash-once behavior)
+        if (! $response->isRedirect()) {
+            Flash::clearOldInput();
+        }
     }
 
     /**
