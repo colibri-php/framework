@@ -11,6 +11,7 @@ use Colibri\View\Latte\ErrorNode;
 use Colibri\View\Latte\PageNode;
 use Colibri\View\Latte\RedirectNode;
 use Colibri\View\Latte\TranslateNode;
+use Colibri\View\Latte\CsrfNode;
 use Colibri\View\Latte\CssNode;
 use Colibri\View\Latte\ImageNode;
 use Colibri\View\Latte\JsNode;
@@ -42,6 +43,7 @@ class LatteExtension extends Extension
             'scripts' => ScriptsNode::create(...),
             'pagination' => PaginationNode::create(...),
             'alerts' => AlertsNode::create(...),
+            'csrf' => CsrfNode::create(...),
         ];
     }
 
