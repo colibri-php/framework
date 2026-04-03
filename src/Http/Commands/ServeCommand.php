@@ -26,7 +26,11 @@ class ServeCommand implements CommandInterface
         echo "Colibri development server started: http://$host:$port\n";
         echo "Press Ctrl+C to stop.\n\n";
 
-        passthru("php -S $host:$port -t public");
+        $process = proc_open("php -S $host:$port -t public", [STDIN, STDOUT, STDERR], $pipes);
+
+        if (is_resource($process)) {
+            proc_close($process);
+        }
 
         return 0;
     }
